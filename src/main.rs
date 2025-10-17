@@ -11,9 +11,9 @@ fn main() -> ExitCode{
     if query.to_string() == "--encode" {
         let contents = std::fs::read_to_string(file_path)
             .expect("Should have been able to read the file");
-        let encoded_str = "";
+        let encoded_str = String::from("");
         let decoded_str = "";
-        if decode::decode(contents, encoded_str) != 0 {
+        if decode::decode(contents, &encoded_str) != 0 {
             return ExitCode::from(1);
         }
         println!("{encoded_str}");

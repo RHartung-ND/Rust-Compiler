@@ -1,6 +1,6 @@
 use regex::Regex;
 
-pub fn decode(es: String, s: &str) -> i32 {
+pub fn decode(es: String, mut s: &String) -> i32 {
                             // a,  b,  e,   f,   n,   r,   t,   v,   \,  ',  "
     let reserved: [i32; 11] = [97, 98, 101, 102, 110, 114, 116, 118, 92, 39, 34];
     let ascii:    [i32; 11] = [7,  8,  27,  12,  10,  13,  9,   11,  92, 39, 34];
@@ -8,6 +8,7 @@ pub fn decode(es: String, s: &str) -> i32 {
     let mut idx: usize = 1;
     let mut insert: i32 = 0;
     let len: usize  = es.len();
+    let mut result: String = String::from("");
 
     if len < 2 {
         println!("String must start and end with a quotation mark.");
@@ -44,11 +45,11 @@ pub fn decode(es: String, s: &str) -> i32 {
                 let char2 = es.chars().nth(idx + 4).unwrap();
                 let hay = format!("{char1}{char2}");
                 if re.is_match(&hay) {
-                    let dec = i32::from_str_radix(&hay, 16).unwrap();
-                    // s[insert] = (char)dec;
+                    let dec = u8::from_str_radix(&hay, 16).unwrap();
+                    result = format!("{}{}", result, String::from_utf8_lossy(&[dec]));
                     // insert += 1;
-                    // idx += 5;
-                    // continue;
+                    idx += 5;
+                    continue;
                 }
             }
             
@@ -80,6 +81,7 @@ pub fn decode(es: String, s: &str) -> i32 {
         }
         
 //         s[insert] = (char)es[idx];
+        result = format!("{}{}", result, String::from(val as char));
         idx += 1;
 //         insert++;
     }
@@ -88,6 +90,7 @@ pub fn decode(es: String, s: &str) -> i32 {
 //         printf("Strings may contain up to 255 characters.\n");
 //         return 1;
 //     }
+    println!("{result}");
     return 0;
 }
 

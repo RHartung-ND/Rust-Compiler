@@ -1,12 +1,11 @@
 use regex::Regex;
 
-pub fn decode(es: String, mut s: &String) -> i32 {
+pub fn decode(es: String, s: &mut String) -> i32 {
                             // a,  b,  e,   f,   n,   r,   t,   v,   \,  ',  "
-    let reserved: [i32; 11] = [97, 98, 101, 102, 110, 114, 116, 118, 92, 39, 34];
-    let ascii:    [i32; 11] = [7,  8,  27,  12,  10,  13,  9,   11,  92, 39, 34];
+    let reserved: [u8; 11] = [97, 98, 101, 102, 110, 114, 116, 118, 92, 39, 34];
+    let ascii:    [u8; 11] = [7,  8,  27,  12,  10,  13,  9,   11,  92, 39, 34];
 
     let mut idx: usize = 1;
-    let mut insert: i32 = 0;
     let len: usize  = es.len();
     let mut result: String = String::from("");
 
@@ -19,7 +18,7 @@ pub fn decode(es: String, mut s: &String) -> i32 {
         println!("String must start with a quotation mark.");
         return 1;
     }
-    
+
     if es.as_bytes()[len - 1] != 34 {
         println!("String must end with a quotation mark.");
         return 1;
@@ -46,56 +45,48 @@ pub fn decode(es: String, mut s: &String) -> i32 {
                 let hay = format!("{char1}{char2}");
                 if re.is_match(&hay) {
                     let dec = u8::from_str_radix(&hay, 16).unwrap();
-                    result = format!("{}{}", result, String::from_utf8_lossy(&[dec]));
-                    // insert += 1;
+                    result.push(dec as char);
                     idx += 5;
                     continue;
+                } else {
+                    result.push_str("\\0x");
+                    idx += 2;
                 }
             }
-            
-//             // Escape sequence handler
-//             for (int j = 0; j < 11; j++){
-//                 if ((int)es[idx + 1] == reserved[j]){
-//                     s[insert] = (char)ascii[j];
-//                     found = true;
-//                     idx += 2;
-//                     insert++;
-//                     break;
-//                 }
-//             }
+            // Escape sequence handler
+            for j in 1..11 {
+                if es.as_bytes()[idx + 1] == reserved[j] {
+                    result.push(ascii[j] as char);
+                    found = true;
+                    idx += 2;
+                    break;
+                }
+            }
 
-//             // Escape sequence handler (non-reserved characters)
-//             if (found == false){
-//                 s[insert] = (char)es[idx + 1];
-//                 idx += 2;
-//                 insert++;
-//             }
-//             continue;
-//         } else if ((val == 34)){
-//             if ((int)es[idx - 1] != 92){
-//                 printf("Double quotation marks must be escaped.");
-//                 return 1;
-//             }
-//             idx++;
-//             continue;
+            // Escape sequence handler (non-reserved characters)
+            if found == false {
+                result.push(es.as_bytes()[idx + 1] as char);
+                idx += 2;
+            }
+            continue;
+        } else if val == 34 {
+            if es.as_bytes()[idx - 1] != 92 {
+                println!("Double quotation marks must be escaped.");
+                return 1;
+            }
+            idx += 1;
+            continue;
         }
         
-//         s[insert] = (char)es[idx];
-        result = format!("{}{}", result, String::from(val as char));
+        result.push(val as char);
         idx += 1;
-//         insert++;
     }
 
-// if (strlen(s) > 255){
-//         printf("Strings may contain up to 255 characters.\n");
-//         return 1;
-//     }
-    println!("{result}");
+    if result.len() > 255 {
+        println!("Strings may contain up to 255 characters.");
+        return 1;
+    }
+
+    s.push_str(&result);
     return 0;
 }
-
-
-
-
-//     return 0;
-// }

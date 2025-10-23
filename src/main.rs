@@ -1,5 +1,6 @@
 mod decode;
 mod encode;
+mod helper_functions;
 use std::process::ExitCode;
 
 fn main() -> ExitCode{
@@ -11,13 +12,13 @@ fn main() -> ExitCode{
     if query.to_string() == "--encode" {
         let contents = std::fs::read_to_string(file_path)
             .expect("Should have been able to read the file");
-        let mut encoded_str = String::from("");
         let mut decoded_str = String::from("");
-        if decode::decode(contents, &mut encoded_str) != 0 {
+        let mut encoded_str = String::from("");
+        if decode::decode(contents, &mut decoded_str) != 0 {
             return ExitCode::from(1);
         }
-        println!("String: {encoded_str}");
-        encode::encode(encoded_str, &mut decoded_str);
+        println!("{decoded_str}");
+        encode::encode(decoded_str, &mut encoded_str);
     } else{
         println!("invalid query");
     }

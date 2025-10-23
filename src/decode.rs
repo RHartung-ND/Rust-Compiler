@@ -1,4 +1,5 @@
 use regex::Regex;
+use crate::helper_functions::unicode_to_dec;
 
 pub fn decode(es: String, s: &mut String) -> i32 {
                             // a,  b,  e,   f,   n,   r,   t,   v,   \,  ',  "
@@ -7,7 +8,8 @@ pub fn decode(es: String, s: &mut String) -> i32 {
 
     let mut idx: usize = 1;
     let len: usize  = es.len();
-    let mut result: String = String::from("");
+    let mut char_arr = vec![];
+
 
     if len < 2 {
         println!("String must start and end with a quotation mark.");
@@ -30,7 +32,9 @@ pub fn decode(es: String, s: &mut String) -> i32 {
     }
 
     while idx < len - 1{
-        let val = es.as_bytes()[idx];
+        let character = es.chars().nth(idx).unwrap();
+        let unicode = character.escape_unicode().to_string();
+        let val = unicode_to_dec(&unicode);
         if val > 127 {
             println!("String may only contain valid ASCII characters between 0 and 127.");
             return 1;
@@ -42,21 +46,18 @@ pub fn decode(es: String, s: &mut String) -> i32 {
                 let re = Regex::new(r"([a-f]|[A-F]|[0-9]){2}").unwrap();
                 let char1 = es.chars().nth(idx + 3).unwrap();
                 let char2 = es.chars().nth(idx + 4).unwrap();
-                let hay = format!("{char1}{char2}");
-                if re.is_match(&hay) {
-                    let dec = u8::from_str_radix(&hay, 16).unwrap();
-                    result.push(dec as char);
+                let hex_code: String = format!("{char1}{char2}");
+                if re.is_match(&hex_code) {
+                    char_arr.push(u8::from_str_radix(&hex_code.to_string(), 16).unwrap());
                     idx += 5;
                     continue;
-                } else {
-                    result.push_str("\\0x");
-                    idx += 2;
                 }
             }
+
             // Escape sequence handler
-            for j in 1..11 {
+            for j in 0..11 {
                 if es.as_bytes()[idx + 1] == reserved[j] {
-                    result.push(ascii[j] as char);
+                    char_arr.push(ascii[j]);
                     found = true;
                     idx += 2;
                     break;
@@ -65,7 +66,7 @@ pub fn decode(es: String, s: &mut String) -> i32 {
 
             // Escape sequence handler (non-reserved characters)
             if found == false {
-                result.push(es.as_bytes()[idx + 1] as char);
+                char_arr.push(es.as_bytes()[idx + 1]);
                 idx += 2;
             }
             continue;
@@ -78,15 +79,17 @@ pub fn decode(es: String, s: &mut String) -> i32 {
             continue;
         }
         
-        result.push(val as char);
+        char_arr.push(val);
         idx += 1;
     }
 
-    if result.len() > 255 {
+    if char_arr.len() > 255 {
         println!("Strings may contain up to 255 characters.");
         return 1;
     }
 
-    s.push_str(&result);
+    for d in char_arr.iter(){
+        s.push(*d as char);
+    }
     return 0;
 }

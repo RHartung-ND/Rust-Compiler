@@ -72,11 +72,8 @@ enum Token {
     #[regex(r"'(.|\\0x([a-fA-F0-9]){2})'")]           TOKEN_CHAR_LITERAL,
 }
 
-pub fn scan(file_path: &String, verbose: bool) -> i32 {
-    let contents = std::fs::read_to_string(file_path)
-        .expect("Should have been able to read the file");
-
-    let mut lexer = Token::lexer(&contents);
+pub fn scan(contents: &String, verbose: bool) -> i32 {
+    let mut lexer = Token::lexer(contents);
     while let Some(token) = lexer.next() {
         match token {
             Ok(token) => {

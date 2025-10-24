@@ -35,6 +35,7 @@ pub fn decode(es: String, s: &mut String) -> i32 {
         let character = es.chars().nth(idx).unwrap();
         let unicode = character.escape_unicode().to_string();
         let val = unicode_to_dec(&unicode);
+        // println!("{character} : {unicode} : {val}");
         if val > 127 {
             println!("String may only contain valid ASCII characters between 0 and 127.");
             return 1;
@@ -79,7 +80,7 @@ pub fn decode(es: String, s: &mut String) -> i32 {
             continue;
         }
         
-        char_arr.push(val);
+        char_arr.push(val as u8);
         idx += 1;
     }
 

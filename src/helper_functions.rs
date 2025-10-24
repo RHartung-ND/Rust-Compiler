@@ -1,8 +1,10 @@
-pub fn unicode_to_dec(unicode: &str) -> u8 {
-    if unicode.len() == 5 {
-        return u8::from_str_radix(&unicode.chars().nth(3).unwrap().to_string(), 16).unwrap();
+pub fn unicode_to_dec(unicode: &str) -> i32 {
+    let mut dec_string: String = String::from("");
+    let mut idx = 3;
+    let arr = unicode.as_bytes();
+    while arr[idx] != 125 {
+        dec_string.push(unicode.chars().nth(idx).unwrap());
+        idx += 1;
     }
-    let char1 = unicode.chars().nth(3).unwrap();
-    let char2 = unicode.chars().nth(4).unwrap();
-    return u8::from_str_radix(&format!("{char1}{char2}"), 16).unwrap();
+    return i32::from_str_radix(&dec_string, 16).unwrap();
 }

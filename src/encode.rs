@@ -3,7 +3,7 @@ use crate::helper_functions::unicode_to_dec;
 pub fn encode(s: String, es: &mut String){
                            // a,  b,  e,   f,   n,   r,   t,   v,   \,  ',  "
     let reserved: [u8; 11] = [97, 98, 101, 102, 110, 114, 116, 118, 92, 39, 34];
-    let ascii:    [u8; 11] = [7,  8,  27,  12,  10,  13,  9,   11,  92, 39, 34];
+    let ascii:    [i32; 11] = [7,  8,  27,  12,  10,  13,  9,   11,  92, 39, 34];
 
     let mut idx: usize = 0;
     let len: usize  = s.chars().count();

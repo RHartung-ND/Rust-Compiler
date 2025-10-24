@@ -18,7 +18,6 @@ fn main() -> ExitCode{
         if decode::decode(contents, &mut decoded_str) != 0 {
             return ExitCode::from(1);
         }
-        println!("{decoded_str}");
         encode::encode(decoded_str, &mut encoded_str);
     } else if query == "--scan" {
         if scan::scan(file_path, true) != 0 {

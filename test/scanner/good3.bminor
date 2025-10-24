@@ -1,0 +1,10 @@
+a: array [5] integer;
+a: array [5] integer = {1,2,3,4,5};
+l: integer = # a;
+for( i=0; i<=#a; i++ ) {
+        print a[i];
+}
+c: carray [5] integer = {1,2,3,4,5};
+for( i=0; i<=5; i++ ) {
+     print c[i];
+}

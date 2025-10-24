@@ -1,0 +1,17 @@
+'a'
+'A'
+'\0x48'
+'\0xA0'
+while(i<10){
+    print"\'count\'", i;
+}
+// This is a comment
+5+5=10
+'c'
+/* This
+is
+a
+multiline
+comment
+*/
+/*Comment*/Word;/*Comment*/

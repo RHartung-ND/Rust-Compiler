@@ -16,3 +16,4 @@ clean:
 .PHONY: test
 test:
 	@sh test/encode/runtest.sh $(SHOW_CORRECT)
+	@sh test/scanner/runtest.sh $(SHOW_CORRECT)

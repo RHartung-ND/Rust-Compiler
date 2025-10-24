@@ -13,6 +13,7 @@ clean:
 	@rm -rf target/*
 	@cargo clean
 	@rm test/encode/*.out || true
+	@rm test/scanner/*.out || true
 .PHONY: test
 test:
 	@sh test/encode/runtest.sh $(SHOW_CORRECT)

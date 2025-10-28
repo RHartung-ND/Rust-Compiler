@@ -13,19 +13,25 @@ fn main() -> ExitCode{
     let contents = std::fs::read_to_string(file_path)
         .expect("Should have been able to read the file");
 
-    if query == "--encode" {
-        let mut decoded_str = String::from("");
-        let mut encoded_str = String::from("");
-        if decode::decode(contents, &mut decoded_str) != 0 {
+    match query.as_str() {
+        "--encode" => {
+            let mut decoded_str = String::from("");
+            let mut encoded_str = String::from("");
+            if decode::decode(contents, &mut decoded_str) != 0 {
+                return ExitCode::from(1);
+            }
+            encode::encode(decoded_str, &mut encoded_str);
+        },
+        "--scan" => {
+            if scan::scan(&contents, true) != 0 {
+                return ExitCode::from(1);
+            }
+        },
+        _ => {
+            println!("invalid query");
             return ExitCode::from(1);
+
         }
-        encode::encode(decoded_str, &mut encoded_str);
-    } else if query == "--scan" {
-        if scan::scan(&contents, true) != 0 {
-            return ExitCode::from(1);
-        }
-    } else {
-        println!("invalid query");
     }
-    ExitCode::SUCCESS
+    return ExitCode::from(0);
 }

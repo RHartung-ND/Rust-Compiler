@@ -77,7 +77,7 @@ pub fn scan(contents: &String, verbose: bool) -> i32 {
     while let Some(token) = lexer.next() {
         match token {
             Ok(token) => {
-                let yytext = lexer.slice().to_string();                    
+                let yytext = lexer.slice().to_string();                  
                 if verbose == true {
                     match token {
                         Token::TOKEN_UNMATCHED_COMMENT => {

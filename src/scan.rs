@@ -122,7 +122,7 @@ pub fn scan(contents: &String, verbose: bool) -> i32 {
                 return 1;
             },
 
-            _ => println!("{}", token)
+            _ => if verbose {println!("{}", token)}
         }
     }
     return 0;

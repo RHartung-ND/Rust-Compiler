@@ -1,6 +1,7 @@
 mod decode;
 mod encode;
 mod scan;
+mod parse;
 mod helper_functions;
 use std::process::ExitCode;
 
@@ -24,6 +25,11 @@ fn main() -> ExitCode{
         },
         "--scan" => {
             if scan::scan(&contents, true) != 0 {
+                return ExitCode::from(1);
+            }
+        },
+        "--parse" => {
+            if parse::parse(&contents, true) != 0 {
                 return ExitCode::from(1);
             }
         },

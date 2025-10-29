@@ -1,0 +1,7 @@
+main: function integer () =
+{
+	a: integer = 10;
+	a: integer = 0x10;
+	a: integer = 0b10;
+	l: integer = # a;
+}

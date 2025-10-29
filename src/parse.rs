@@ -177,7 +177,7 @@ pub fn grammar() -> Grammar<()> {
 }
 
 pub fn parse(contents: &String, verbose: bool) -> i32 {
-    if scan(contents, false) == 1{
+    if scan(contents, false) == 1 {
         return 1;
     }
 
@@ -187,7 +187,6 @@ pub fn parse(contents: &String, verbose: bool) -> i32 {
     let grammar = grammar();
     let parse_trees = santiago::parser::parse(&grammar, &lexemes);
 
-    // println!("{:?}", parse_trees);
     match parse_trees {
         Err(_) => {
             if verbose {println!("Parse Failed!")}

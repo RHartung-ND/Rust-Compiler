@@ -62,7 +62,7 @@ pub fn lexer_rules() -> LexerRules {
     
         // Literals
         "DEFAULT" | "TOKEN_IDENTIFIER" = pattern r"[_a-zA-Z][_a-zA-Z0-9]*";
-        "DEFAULT" | "TOKEN_INTEGER_LITERAL" = pattern r"([0-9]+)|(0x[0-9a-zA-Z]+)|(0b[01]+)";
+        "DEFAULT" | "TOKEN_INTEGER_LITERAL" = pattern r"(0x[0-9a-fA-F]+)|(0b[01]+)|([0-9]+)";
         "DEFAULT" | "TOKEN_DOUBLE_LITERAL" = pattern r"[0-9]*[.][0-9]+";
         "DEFAULT" | "TOKEN_STRING_LITERAL" = pattern r#"\"(\\.|[^\\\"\n])*\""#;
         "DEFAULT" | "TOKEN_CHAR_LITERAL" = pattern r"'(.|\\0x([a-fA-F0-9]){2})'";

@@ -1,0 +1,41 @@
+use crate::expr;
+
+enum expr_t {
+    EXPR_PLUS,
+	EXPR_MINUS,
+	EXPR_NEGATE,
+	EXPR_TIMES,
+	EXPR_DIVIDE,
+	EXPR_MOD,
+	EXPR_EXP,
+	EXPR_NAME,
+	EXPR_INT_LITERAL,
+	EXPR_BOOL_LITERAL,
+	EXPR_CHAR_LITERAL,
+	EXPR_STRING_LITERAL,
+	EXPR_DOUBLE_LITERAL,
+	EXPR_FUNC,
+	EXPR_INC,
+	EXPR_DEC,
+	EXPR_IDX,
+	EXPR_ASSIGN,
+	EXPR_OR,
+	EXPR_AND,
+	EXPR_EQUIV,
+	EXPR_NEQ,
+	EXPR_GT,
+	EXPR_GEQ,
+	EXPR_LT,
+	EXPR_LEQ,
+	EXPR_UNARY,
+	EXPR_NOT,
+	EXPR_BRACE,
+	EXPR_LIST
+}
+
+pub struct Expr {
+    kind:expr_t,
+    value:i32,
+    left:Expr,
+    right:Expr
+}

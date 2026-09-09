@@ -1,58 +1,59 @@
 use crate::expr::Expr;
+// use crate::expr::expr_print;
+// use crate::expr::expr_t;
+use crate::stmt::Stmt;
+use crate::data_type::Data_type;
+// use crate::print::print_indent;
 
+#[allow(non_snake_case)]
 pub struct Decl {
-    name:String,
-    Type:Type,
-    value:Expr,
-    code:Stmt,
-    next:Decl
+    pub name:  String,
+    pub Data_type:  Data_type,
+    pub value: Expr,
+    pub code:  Stmt,
+    pub next:  Option<Box<Decl>>
 }
 
-pub fn decl_create( name: String, Type: Type, value: Expr, code: Stmt, next: Decl ) -> Decl {
-    
+pub fn decl_create( name: String, Data_type: Data_type, value: Expr, code: Stmt, next: Option<Box<Decl>> ) -> Decl {
     let d = Decl {
         name:name,
-        Type:Type,
-        value:Expr,
-        code:Stmt,
-        next:Decl,
+        Data_type:Data_type,
+        value:value,
+        code:code,
+        next:next
     };
-	if (!d) {
-        fprintf(stderr, "print error: unable to allocate memory for declaration node in AST.\n");
-        exit(1);
-    }
-	
+
 	return d;
 }
 
-pub fn decl_print( d: Decl, num_spaces: i8 ){
-    if !d {
-        return;
-    }
+// pub fn decl_print( d: Decl, num_spaces: i8 ){
+//     if d == 0 {
+//         return;
+//     }
 
-	print_indent(num_spaces);
+// 	print_indent(num_spaces);
 
-    printf("%s: ", d->name);
+//     print!("%s: ", d.name);
     
-    type_print(d->type);
+//     type_print(d.Type);
 	
-    if (d->value) {
-        printf(" = ");
-        if (d->value->kind == EXPR_LIST){
-            printf("{");
-            expr_print(d->value);
-            printf("}");
-        } else {
-            expr_print(d->value);
-            printf(";");
-        }
-    } else if (d->code) {
-        printf(" = ");
-        stmt_print(d->code, num_spaces);
-    } else {
-        printf(";");
-    }
-    printf("\n");
+//     if (d.value) {
+//         print!(" = ");
+//         if d.value.kind == expr_t::EXPR_LIST {
+//             print!("{{");
+//             expr_print(d.value);
+//             print!("}");
+//         } else {
+//             expr_print(d.value);
+//             print!(";");
+//         }
+//     } else if (d.code) {
+//         print!(" = ");
+//         stmt_print(d.code, num_spaces);
+//     } else {
+//         print!(";");
+//     }
+//     print!("\n");
 
-    decl_print(d->next, num_spaces);
-}
+//     decl_print(d.next, num_spaces);
+// }

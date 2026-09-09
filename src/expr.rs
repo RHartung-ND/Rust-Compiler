@@ -1,6 +1,8 @@
-use crate::expr;
+use crate::helper_functions::unicode_to_dec;
 
-enum expr_t {
+#[allow(non_camel_case_types)]
+#[allow(non_snake_case)]
+pub enum expr_t {
     EXPR_PLUS,
 	EXPR_MINUS,
 	EXPR_NEGATE,
@@ -34,8 +36,25 @@ enum expr_t {
 }
 
 pub struct Expr {
-    kind:expr_t,
-    value:i32,
-    left:Expr,
-    right:Expr
+    pub kind:  expr_t,
+    pub value: i32,
+    pub left:  Option<Box<Expr>>,
+    pub right: Option<Box<Expr>>
+}
+
+pub fn expr_create(kind:expr_t, left:Option<Box<Expr>>, right:Option<Box<Expr>>) -> Expr {
+	let e = Expr {
+		kind:kind,
+		left:left,
+		value:0,
+		right:right,
+	};
+
+	return e;
+}
+
+pub fn expr_create_integer_literal( c: String ) -> Expr {
+    let mut e = expr_create(expr_t::EXPR_INT_LITERAL,None,None);
+    e.value = unicode_to_dec(&c);
+    return e;
 }

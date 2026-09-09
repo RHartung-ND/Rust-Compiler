@@ -1,11 +1,13 @@
 use crate::parse::parse;
-use crate::decl::decl_print;
+// use crate::decl::decl_print;
 const DEFAULT_INDENT: i8 = 4;
 
 pub fn print(contents: &String, verbose: bool) -> i32 {
     if parse(contents, false) == 1 {
         return 1;
     }
+
+    // decl_print(ast, 0);
     return 0;
 }
 

@@ -1,5 +1,6 @@
 # Misc. gitignore
 .vscode
+test/*/*.out
 
 # Rust gitignore
 # will have compiled files and executables

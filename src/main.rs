@@ -3,9 +3,10 @@ mod encode;
 mod scan;
 mod parse;
 mod print;
+mod param_list;
 
 mod decl;
-mod r#type;
+mod data_type;
 mod stmt;
 mod expr;
 

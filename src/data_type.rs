@@ -15,7 +15,6 @@ pub enum data_type_t {
 	TYPE_FUNCTION
 }
 
-#[allow(non_camel_case_types)]
 pub struct Data_type {
     kind: data_type_t,
     subtype: Option<Box<Data_type>>,

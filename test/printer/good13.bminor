@@ -1,0 +1,6 @@
+main: function void () =
+{
+    this_is_a_char: char = 'a';
+    this_is_a_char: char = '\0x41';
+    this_is_a_char: char = '\\';
+}

@@ -3,7 +3,7 @@ use crate::expr::Expr;
 // use crate::expr::expr_t;
 use crate::stmt::Stmt;
 use crate::data_type::Data_type;
-// use crate::print::print_indent;
+use crate::print::print_indent;
 
 #[allow(non_snake_case)]
 pub struct Decl {

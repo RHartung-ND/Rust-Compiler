@@ -1,6 +1,6 @@
 %%
-\/\/(.*)                              ;
-[/][*][^*]*[*]+([^*/][^*]*[*]+)*[/]   ;
+\/\/(.*)                              "TOKEN_C_COMMENT"
+[/][*][^*]*[*]+([^*/][^*]*[*]+)*[/]   "TOKEN_CPP_COMMENT"
 [/][*]                                "TOKEN_UNMATCHED_COMMENT"
 
 array                               "TOKEN_ARRAY"

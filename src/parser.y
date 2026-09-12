@@ -12,9 +12,11 @@
 %right TOKEN_CARET
 %right TOKEN_NOT TOKEN_UNARY
 
-%expect-unused While "TOKEN_WHILE"
-%expect-unused While "TOKEN_ERROR"
-%expect-unused While "TOKEN_UNMATCHED_COMMENT"
+%expect-unused Unused "TOKEN_WHILE"
+%expect-unused Unused "TOKEN_ERROR"
+%expect-unused Unused "TOKEN_UNMATCHED_COMMENT"
+%expect-unused Unused "TOKEN_C_COMMENT"
+%expect-unused Unused "TOKEN_CPP_COMMENT"
 %%
 
 Program: DeclList { Some($1) }
@@ -162,8 +164,10 @@ StmtOther: Expr "TOKEN_SEMICOLON" { stmt_create(StmtKind::Expr, None, None, Some
         | StmtBrace { $1 }
         ;
 
-While: "TOKEN_WHILE" { }
+Unused: "TOKEN_WHILE" { }
      | "TOKEN_ERROR" { }
      | "TOKEN_UNMATCHED_COMMENT" { }
+     | "TOKEN_C_COMMENT" { }
+     | "TOKEN_CPP_COMMENT" { }
      ;
 %%

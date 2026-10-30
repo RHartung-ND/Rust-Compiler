@@ -1,0 +1,5 @@
+main: function integer () = {
+    for (i = 0; i < 10; i++){
+        if (a > 5) {print a;} else if (a < 5) {print b;} else {print c;}
+    }
+}

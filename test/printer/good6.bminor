@@ -1,0 +1,50 @@
+/* Now try some expressions */
+
+x: integer = 65;
+s: string = "hello";
+b: boolean = false;
+
+min: function integer ( a: integer, b: integer ) =
+{
+	if( a<b ) print a; else print b;
+	if( c<d ) return c; else return d;
+
+}
+
+testfunc: function void ( z: integer ) =
+{
+	// Nested integer operators.
+	y: integer = x*(x*10 + 55%6 + z/10);
+	print "y: ", y, "\n";
+
+	// Nested boolean operations.
+	c: boolean = ( x<100 && y>200 ) || !(b=true);
+	print "c: ", c, "\n";
+
+	// Boolean operations on strings?
+	d: boolean = (s == "goodbye");
+	print "d: ", d, "\n";
+
+	// Can we stack up assignments?
+	z = y = x;
+
+	a: array [100] integer;
+
+	// Function calls and array accesses:
+	y = min(a[10],a[20]);
+}
+
+/* Display fibonnaci numbers from 0 to 45. */
+fib: function integer ( x: integer ) = {
+if( x<1 ) { return 0; } else {
+if((x<2)) { return 1; } else {
+return fib((x)-1) + fib((x-2)); // recursive step
+} }}
+
+
+/* Display fibonnaci numbers from 0 to 45. */
+new: function integer ( x: integer ) = {
+if( x<1 ) { return 0; } else if (x > 5) {
+if((x<2)) { return 1; } } else {
+return fib((x)-1) + fib((x-2));} // recursive step
+}

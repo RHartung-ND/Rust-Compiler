@@ -1,6 +1,7 @@
 # Misc. gitignore
 .vscode
 test/*/*.out
+Cargo.lock
 
 # Rust gitignore
 # will have compiled files and executables

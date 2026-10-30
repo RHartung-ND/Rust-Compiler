@@ -1,0 +1,17 @@
+// produces correct precedence of operations
+
+main: function void() = {
+x:integer = 5;
+y:integer = 4;
+if(4 == 1){x = 6;}
+if((4 <= 1) || (4 > 1)){x = 6;}
+if((4 <= 1) && (4 > 1)){x = 6;}
+if(!((4*x^5 + 4) - 4 >= 1)){x = 6;}}
+
+test: function integer () =
+{
+	a: integer = 10; //10
+	a: integer = 0x1aA0; //6816
+	a: integer = 0b1010101001010101010100; //2790740
+	l: integer = # a;
+}

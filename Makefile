@@ -18,9 +18,9 @@ clean:
 	@rm test/printer/*.out || true
 .PHONY: test
 test:
-# 	@sh test/encode/runtest.sh $(SHOW_CORRECT)
-# 	@sh test/scanner/runtest.sh $(SHOW_CORRECT)
-# 	@sh test/parser/runtest.sh $(SHOW_CORRECT)
-# 	@sh test/printer/runtest.sh $(SHOW_CORRECT)
-	@target/release/bminor --scan .vscode/testfile.txt
-	@target/release/bminor --parse .vscode/testfile.txt
+	@sh test/encode/runtest.sh $(SHOW_CORRECT)
+	@sh test/scanner/runtest.sh $(SHOW_CORRECT)
+	@sh test/parser/runtest.sh $(SHOW_CORRECT)
+	@sh test/printer/runtest.sh $(SHOW_CORRECT)
+# 	@target/release/bminor --scan .vscode/testfile.txt
+# 	@target/release/bminor --parse .vscode/testfile.txt

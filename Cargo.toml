@@ -9,12 +9,10 @@ doc = false
 name = "bminor"
 
 [build-dependencies]
-cfgrammar = "0.15.0"
-lrlex = "0.15.0"
-lrpar = "0.15.0"
+lalrpop = "0.23.1"
 
 [dependencies]
-cfgrammar = "0.15.0"
-lrlex = "0.15.0"
-lrpar = "0.15.0"
+lalrpop = "0.23.1"
+lalrpop-util = "0.23.2"
+logos = "0.16.1"
 regex = "1.13.1"

@@ -1,85 +1,184 @@
+use std::fmt;
+use std::num::ParseIntError;
 use crate::decode::decode;
-use lrlex::lrlex_mod;
-use lrpar::{Lexer, Lexeme};
-lrlex_mod!("scanner.l");
+use logos::{Logos, SpannedIter};
 
+pub type Spanned<Tok, Loc, Error> = Result<(Loc, Tok, Loc), Error>;
 
-fn token_id_to_name(token_id: usize) -> &'static str {
-    // Old names.
-    // When I added the grammar, it reordered the lexemes to be in order of when they were defined. It used
-    //     to be in the order defined by the scanner.l file. I don't know why they decided this. The new order
-    //     can be found at target/release/build/bminor-<some numbers>/out/scanner.l.rs starting on line 299.
-    
-    // let names: [&'static str; 57] = ["None", "None", "TOKEN_UNMATCHED_COMMENT","TOKEN_ARRAY","TOKEN_AUTO","TOKEN_BOOLEAN","TOKEN_CARRAY","TOKEN_CHAR","TOKEN_DOUBLE","TOKEN_ELSE","TOKEN_FALSE","TOKEN_FLOAT","TOKEN_FOR","TOKEN_FUNCTION","TOKEN_IF","TOKEN_INTEGER","TOKEN_PRINT","TOKEN_RETURN","TOKEN_STRING","TOKEN_TRUE","TOKEN_VOID","TOKEN_WHILE","TOKEN_LPAREN","TOKEN_RPAREN","TOKEN_LBRACKET","TOKEN_RBRACKET","TOKEN_INCREMENT","TOKEN_DECREMENT","TOKEN_UNARY","TOKEN_PLUS","TOKEN_MINUS","TOKEN_DIVIDE","TOKEN_TIMES","TOKEN_MOD","TOKEN_SEMICOLON","TOKEN_COLON","TOKEN_COMMA","TOKEN_NOT","TOKEN_LBRACE","TOKEN_RBRACE","TOKEN_CARET","TOKEN_LESSTHAN","TOKEN_GREATERTHAN","TOKEN_EQUALS","TOKEN_LEQ","TOKEN_GEQ","TOKEN_NEQ","TOKEN_EQUIVALENT","TOKEN_OR","TOKEN_AND","TOKEN_IDENTIFIER","TOKEN_INTEGER_LITERAL","TOKEN_DOUBLE_LITERAL","TOKEN_STRING_LITERAL","TOKEN_CHAR_LITERAL", "None", "UNMATCHED"];
-
-    let names: [&'static str; 55] = ["TOKEN_COLON", "TOKEN_SEMICOLON", "TOKEN_EQUALS", "TOKEN_LBRACE", "TOKEN_RBRACE", "TOKEN_INTEGER_LITERAL", "TOKEN_DOUBLE_LITERAL", "TOKEN_STRING_LITERAL", "TOKEN_CHAR_LITERAL", "TOKEN_FALSE", "TOKEN_TRUE", "TOKEN_STRING", "TOKEN_BOOLEAN", "TOKEN_AUTO", "TOKEN_INTEGER", "TOKEN_DOUBLE", "TOKEN_CHAR", "TOKEN_VOID", "TOKEN_ARRAY", "TOKEN_LBRACKET", "TOKEN_RBRACKET", "TOKEN_CARRAY", "TOKEN_FUNCTION", "TOKEN_LPAREN", "TOKEN_RPAREN", "TOKEN_COMMA", "TOKEN_IDENTIFIER", "TOKEN_OR", "TOKEN_AND", "TOKEN_EQUIVALENT", "TOKEN_NEQ", "TOKEN_GREATERTHAN", "TOKEN_GEQ", "TOKEN_LESSTHAN", "TOKEN_LEQ", "TOKEN_PLUS", "TOKEN_MINUS", "TOKEN_TIMES", "TOKEN_DIVIDE", "TOKEN_MOD", "TOKEN_CARET", "TOKEN_UNARY", "TOKEN_NOT", "TOKEN_INCREMENT", "TOKEN_DECREMENT", "TOKEN_IF", "TOKEN_ELSE", "TOKEN_FOR", "TOKEN_RETURN", "TOKEN_PRINT", "TOKEN_WHILE", "TOKEN_ERROR", "TOKEN_UNMATCHED_COMMENT", "TOKEN_C_COMMENT", "TOKEN_CPP_COMMENT"];
-
-    return names[token_id];
+#[derive(Default, Debug, Clone, PartialEq)]
+pub enum LexicalError {
+    InvalidInteger(ParseIntError),
+    #[default]
+    InvalidToken,
 }
+
+impl fmt::Display for LexicalError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            LexicalError::InvalidInteger(e) => write!(f, "invalid integer: {}", e),
+            LexicalError::InvalidToken => write!(f, "invalid token"),
+        }
+    }
+}
+
+impl From<ParseIntError> for LexicalError {
+    fn from(err: ParseIntError) -> Self {
+        LexicalError::InvalidInteger(err)
+    }
+}
+
+#[derive(Logos, Debug, PartialEq, Clone)]
+#[logos(error = LexicalError)]
+
+// Skip the following
+#[logos(skip r"[ \n\t\r]+")]
+#[logos(skip(r"\/\/(.*)", allow_greedy = true))]
+#[logos(skip "[/][*][^*]*[*]+([^*/][^*]*[*]+)*[/]")]
+
+// Allow for all uppercase variables
+#[allow(non_camel_case_types)]
+pub enum Token {
+    #[regex("[/][*]")] TOKEN_UNMATCHED_COMMENT,
+
+    #[token("array")]    TOKEN_ARRAY,
+    #[token("auto")]     TOKEN_AUTO,
+    #[token("boolean")]  TOKEN_BOOLEAN,
+    #[token("carray")]   TOKEN_CARRAY,
+    #[token("char")]     TOKEN_CHAR,
+    #[token("double")]   TOKEN_DOUBLE,
+    #[token("else")]     TOKEN_ELSE,
+    #[token("false")]    TOKEN_FALSE,
+    #[token("float")]    TOKEN_FLOAT,
+    #[token("function")] TOKEN_FUNCTION,
+    #[token("if")]       TOKEN_IF,
+    #[token("integer")]  TOKEN_INTEGER,
+    #[token("print")]    TOKEN_PRINT,
+    #[token("return")]   TOKEN_RETURN,
+    #[token("string")]   TOKEN_STRING,
+    #[token("true")]     TOKEN_TRUE,
+    #[token("void")]     TOKEN_VOID,
+    #[token("while")]    TOKEN_WHILE,
+
+    #[token("(")]  TOKEN_LPAREN,
+    #[token(")")]  TOKEN_RPAREN,
+    #[token("[")]  TOKEN_LBRACKET,
+    #[token("]")]  TOKEN_RBRACKET,
+    #[token("++")] TOKEN_INCREMENT,
+    #[token("--")] TOKEN_DECREMENT,
+    #[token("#")]  TOKEN_UNARY,
+    #[token("+")]  TOKEN_PLUS,
+    #[token("-")]  TOKEN_MINUS,
+    #[token("/")]  TOKEN_DIVIDE,
+    #[token("*")]  TOKEN_TIMES,
+    #[token("%")]  TOKEN_MOD,
+    #[token(";")]  TOKEN_SEMICOLON,
+    #[token(":")]  TOKEN_COLON,
+    #[token(",")]  TOKEN_COMMA,
+    #[token("!")]  TOKEN_NOT,
+    #[token("{")]  TOKEN_LBRACE,
+    #[token("}")]  TOKEN_RBRACE,
+    #[token("^")]  TOKEN_CARET,
+    #[token(">")]  TOKEN_GREATERTHAN,
+    #[token("for")]      TOKEN_FOR,
+    #[token("=")]  TOKEN_EQUALS,
+    #[token("<")]  TOKEN_LESSTHAN,
+    #[token("<=")] TOKEN_LEQ,
+    #[token(">=")] TOKEN_GEQ,
+    #[token("!=")] TOKEN_NEQ,
+    #[token("==")] TOKEN_EQUIVALENT,
+    #[token("||")] TOKEN_OR,
+    #[token("&&")] TOKEN_AND,
+
+    #[regex(r"[_a-zA-Z][_a-zA-Z0-9]*")]                TOKEN_IDENTIFIER,
+    #[regex(r"([0-9]+)|(0x[0-9a-zA-Z]+)|(0b[01]+)")]   TOKEN_INTEGER_LITERAL,
+    #[regex(r"[0-9]*[.][0-9]+")]                       TOKEN_DOUBLE_LITERAL,
+    #[regex(r#"\"(\\.|[^\\\"\n])*\""#)]                TOKEN_STRING_LITERAL,
+    #[regex(r#"\'(.|\\.|\\|\\0x([a-fA-F0-9]){2})\'"#)] TOKEN_CHAR_LITERAL,
+}
+
+impl fmt::Display for Token {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{:?}", self)
+  }
+}
+
+pub struct Lexer<'input> {
+  // instead of an iterator over characters, we have a token iterator
+  token_stream: SpannedIter<'input, Token>,
+}
+
+impl<'input> Lexer<'input> {
+  pub fn new(input: &'input str) -> Self {
+    // the Token::lexer() method is provided by the Logos trait
+    Self { token_stream: Token::lexer(input).spanned() }
+  }
+}
+
+impl<'input> Iterator for Lexer<'input> {
+    type Item = Spanned<Token, usize, LexicalError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.token_stream
+            .next()
+            .map(|(token, span)| Ok((span.start, token?, span.end)))
+    }
+}
+
 
 pub fn scan(path: &String, verbose: bool) -> i32 {
     let input = std::fs::read_to_string(path).expect("Should have been able to read the file");
-    
-
-    let lexerdef = scanner_l::lexerdef();
-    let lexer = lexerdef.lexer(&input);
-
-    for lexeme_result in lexer.iter() {
-        match lexeme_result {
-            Ok(lexeme) => {
-                let token_id = lexeme.tok_id() as usize;
-                let token_name = token_id_to_name(token_id);
-                let token_text = &input[lexeme.span().start()..lexeme.span().end()];
-                match token_name {
-                    "TOKEN_UNMATCHED_COMMENT" => {
+    let mut lexer = Token::lexer(&input);
+    while let Some(token) = lexer.next() {
+        match token {
+            Ok(token) => {
+                let yytext = lexer.slice().to_string();
+                match token {
+                    Token::TOKEN_UNMATCHED_COMMENT => {
                         println!("scan error: Unterminated comment");
                         return 1;
-                    },
+                    }
 
-                    "TOKEN_INTEGER_LITERAL" | "TOKEN_DOUBLE_LITERAL" => {
-                        if verbose {println!("{} {}", token_name, token_text)};
-                    },
-                        
-                    "TOKEN_STRING_LITERAL" => {
-                        if decode(token_text.to_owned(), &mut String::from("")) == 1 {
-                            println!("scan error: {} is not a valid string", token_text);
+                    Token::TOKEN_INTEGER_LITERAL | Token::TOKEN_DOUBLE_LITERAL => {
+                        if verbose {println!("{:?} {}", token, yytext)};
+                    }
+
+                    Token::TOKEN_STRING_LITERAL => {
+                        if decode(yytext.to_owned(), &mut String::from("")) == 1 {
+                            println!("scan error: {} is not a valid string", yytext);
                             return 1;
                         }
-                        if verbose {println!("{} {}", token_name, token_text)}
-                    },
+                        if verbose {println!("{:?} {}", token, yytext)}
+                    }
 
-                    "TOKEN_CHAR_LITERAL" => {
-                        if token_text.contains("\\x") && token_text.len() == 6 {
+                    Token::TOKEN_CHAR_LITERAL => {
+                        if yytext.contains("\\x") && yytext.len() == 6 {
                             // Hex escape: '\xHH'
                             let temp_string = format!("{}{}",
-                                token_text.chars().nth(4).unwrap(),
-                                token_text.chars().nth(5).unwrap());
+                                yytext.chars().nth(4).unwrap(),
+                                yytext.chars().nth(5).unwrap());
                             let decimal = u8::from_str_radix(&temp_string, 16).unwrap();
-                            if verbose { println!("{} '{}'", token_name, decimal as char) }
+                            if verbose { println!("{:?} '{}'", token, decimal as char) }
                         } else {
                             // Regular escape or single char
-                            if verbose { println!("{} {}", token_name, token_text) }
+                            if verbose { println!("{:?} {}", token, yytext) }
                         }
-                    },
+                    }
 
-                    "TOKEN_IDENTIFIER" => {
-                        if token_text.len() > 255 {
+                    Token::TOKEN_IDENTIFIER => {
+                        if yytext.len() > 255 {
                             println!("scan error: identifier must be less than 255 characters long");
                             return 1;
                         }
-                        if verbose {println!("{} {}", token_name, token_text)}
-                    },
+                        if verbose {println!("{:?} {}", token, yytext)}
+                    }
 
-                    "TOKEN_ERROR" => {
-                        println!("scan error: {} is not a valid character", token_text);
-                        println!("Error occurred at position {}", lexeme.span().start());
-                        return 1;
-                    },
-
-                    _ => if verbose {println!("{}", token_name)}
+                    _ => { if verbose { println!("{:?}", token) } }
                 }
             }
-            Err(e) => eprintln!("Lex error: {:?}", e),
+            Err(_) => {
+                println!("scan error: {} is not a valid character", lexer.slice().to_string());
+                return 1;
+            }
         }
     }
     return 0;

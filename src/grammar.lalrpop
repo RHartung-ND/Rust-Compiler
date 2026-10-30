@@ -1,0 +1,241 @@
+use crate::scan::{Token, LexicalError};
+
+grammar;
+
+pub Program: () = {
+    DeclList => (),
+};
+
+// ---------- Declarations ----------
+
+DeclList: () = {
+    Decl DeclList => (),
+    => (), // ε
+};
+
+Decl: () = {
+    Ident TOKEN_COLON Type TOKEN_SEMICOLON => (),
+    Ident TOKEN_COLON Type TOKEN_EQUALS TOKEN_LBRACE ExprBraced TOKEN_RBRACE TOKEN_SEMICOLON => (),
+    Ident TOKEN_COLON Type TOKEN_EQUALS Expr TOKEN_SEMICOLON => (),
+    Ident TOKEN_COLON Type TOKEN_EQUALS StmtBrace => (),
+};
+
+Literals: () = {
+    TOKEN_INTEGER_LITERAL => (),
+    TOKEN_DOUBLE_LITERAL => (),
+    TOKEN_STRING_LITERAL => (),
+    TOKEN_CHAR_LITERAL => (),
+    TOKEN_FALSE => (),
+    TOKEN_TRUE => (),
+};
+
+Type: () = {
+    TOKEN_STRING => (),
+    TOKEN_BOOLEAN => (),
+    TOKEN_AUTO => (),
+    TOKEN_INTEGER => (),
+    TOKEN_DOUBLE => (),
+    TOKEN_CHAR => (),
+    TOKEN_VOID => (),
+    TOKEN_ARRAY TOKEN_LBRACKET Expr TOKEN_RBRACKET Type => (),
+    TOKEN_CARRAY TOKEN_LBRACKET Expr TOKEN_RBRACKET Type => (),
+    TOKEN_ARRAY TOKEN_LBRACKET TOKEN_RBRACKET Type => (),
+    TOKEN_CARRAY TOKEN_LBRACKET TOKEN_RBRACKET Type => (),
+    TOKEN_FUNCTION Type TOKEN_LPAREN ParamOpt TOKEN_RPAREN => (),
+};
+
+ParamOpt: () = {
+    ParamList => (),
+    => (), // ε
+};
+
+ParamList: () = {
+    Ident TOKEN_COLON Type TOKEN_COMMA ParamList => (),
+    Ident TOKEN_COLON Type => (),
+};
+
+// ---------- Expressions ----------
+
+Ident: () = {
+    TOKEN_IDENTIFIER => (),
+};
+
+Expr: () = {
+    ExprOr => (),
+    ExprOr TOKEN_EQUALS Expr => (),
+};
+
+ExprOr: () = {
+    ExprAnd => (),
+    ExprOr TOKEN_OR ExprAnd => (),
+};
+
+ExprAnd: () = {
+    ExprComparison => (),
+    ExprAnd TOKEN_AND ExprComparison => (),
+};
+
+ExprComparison: () = {
+    ExprPm => (),
+    ExprComparison TOKEN_EQUIVALENT ExprPm => (),
+    ExprComparison TOKEN_NEQ ExprPm => (),
+    ExprComparison TOKEN_GREATERTHAN ExprPm => (),
+    ExprComparison TOKEN_GEQ ExprPm => (),
+    ExprComparison TOKEN_LESSTHAN ExprPm => (),
+    ExprComparison TOKEN_LEQ ExprPm => (),
+};
+
+ExprPm: () = {
+    ExprTd => (),
+    ExprPm TOKEN_PLUS ExprTd => (),
+    ExprPm TOKEN_MINUS ExprTd => (),
+};
+
+ExprTd: () = {
+    ExprExp => (),
+    ExprTd TOKEN_TIMES ExprExp => (),
+    ExprTd TOKEN_DIVIDE ExprExp => (),
+    ExprTd TOKEN_MOD ExprExp => (),
+};
+
+ExprExp: () = {
+    ExprNegate => (),
+    ExprNegate TOKEN_CARET ExprExp => (),
+};
+
+ExprNegate: () = {
+    ExprEnd => (),
+    TOKEN_UNARY ExprEnd => (),
+    TOKEN_NOT ExprEnd => (),
+    TOKEN_MINUS ExprEnd => (),
+};
+
+ExprEnd: () = {
+    ExprEnd TOKEN_INCREMENT => (),
+    ExprEnd TOKEN_DECREMENT => (),
+    Literals => (),
+    Ident => (),
+    Ident TOKEN_LPAREN ExprListOpt TOKEN_RPAREN => (),
+    TOKEN_LPAREN Expr TOKEN_RPAREN => (),
+    ExprEnd TOKEN_LBRACKET Expr TOKEN_RBRACKET => (),
+};
+
+ExprList: () = {
+    Expr TOKEN_COMMA ExprList => (),
+    Expr => (),
+};
+
+ExprListOpt: () = {
+    ExprList => (),
+    => (), // ε
+};
+
+ExprOpt: () = {
+    Expr => (),
+    => (), // ε
+};
+
+ExprBraced: () = {
+    TOKEN_LBRACE ExprBraced TOKEN_RBRACE TOKEN_COMMA ExprBraced => (),
+    TOKEN_LBRACE ExprBraced TOKEN_RBRACE => (),
+    ExprList => (),
+};
+
+// ---------- Statements ----------
+
+Stmt: () = {
+    UnmatchedStmt => (),
+    MatchedStmt => (),
+};
+
+StmtBrace: () = {
+    TOKEN_LBRACE StmtCont TOKEN_RBRACE => (),
+};
+
+StmtCont: () = {
+    Stmt StmtCont => (),
+    => (), // ε
+};
+
+UnmatchedStmt: () = {
+    TOKEN_IF TOKEN_LPAREN Expr TOKEN_RPAREN Stmt => (),
+    TOKEN_IF TOKEN_LPAREN Expr TOKEN_RPAREN MatchedStmt TOKEN_ELSE UnmatchedStmt => (),
+    TOKEN_FOR TOKEN_LPAREN ExprOpt TOKEN_SEMICOLON ExprOpt TOKEN_SEMICOLON ExprOpt TOKEN_RPAREN UnmatchedStmt => (),
+};
+
+MatchedStmt: () = {
+    TOKEN_FOR TOKEN_LPAREN ExprOpt TOKEN_SEMICOLON ExprOpt TOKEN_SEMICOLON ExprOpt TOKEN_RPAREN MatchedStmt => (),
+    TOKEN_IF TOKEN_LPAREN Expr TOKEN_RPAREN MatchedStmt TOKEN_ELSE MatchedStmt => (),
+    StmtOther => (),
+};
+
+StmtOther: () = {
+    Expr TOKEN_SEMICOLON => (),
+    TOKEN_RETURN ExprOpt TOKEN_SEMICOLON => (),
+    TOKEN_PRINT ExprListOpt TOKEN_SEMICOLON => (),
+    Decl => (),
+    StmtBrace => (),
+};
+
+
+extern {
+    type Location = usize;
+    type Error = LexicalError;
+
+    enum Token {
+        TOKEN_ARRAY    => Token::TOKEN_ARRAY,
+        TOKEN_AUTO     => Token::TOKEN_AUTO,
+        TOKEN_BOOLEAN  => Token::TOKEN_BOOLEAN,
+        TOKEN_CARRAY   => Token::TOKEN_CARRAY,
+        TOKEN_CHAR     => Token::TOKEN_CHAR,
+        TOKEN_DOUBLE   => Token::TOKEN_DOUBLE,
+        TOKEN_ELSE     => Token::TOKEN_ELSE,
+        TOKEN_FALSE    => Token::TOKEN_FALSE,
+        TOKEN_FLOAT    => Token::TOKEN_FLOAT,
+        TOKEN_FUNCTION => Token::TOKEN_FUNCTION,
+        TOKEN_IF       => Token::TOKEN_IF,
+        TOKEN_INTEGER  => Token::TOKEN_INTEGER,
+        TOKEN_PRINT    => Token::TOKEN_PRINT,
+        TOKEN_RETURN   => Token::TOKEN_RETURN,
+        TOKEN_STRING   => Token::TOKEN_STRING,
+        TOKEN_TRUE     => Token::TOKEN_TRUE,
+        TOKEN_VOID     => Token::TOKEN_VOID,
+        TOKEN_WHILE    => Token::TOKEN_WHILE,
+
+        TOKEN_LPAREN      => Token::TOKEN_LPAREN,
+        TOKEN_RPAREN      => Token::TOKEN_RPAREN,
+        TOKEN_LBRACKET    => Token::TOKEN_LBRACKET,
+        TOKEN_RBRACKET    => Token::TOKEN_RBRACKET,
+        TOKEN_INCREMENT   => Token::TOKEN_INCREMENT,
+        TOKEN_DECREMENT   => Token::TOKEN_DECREMENT,
+        TOKEN_UNARY       => Token::TOKEN_UNARY,
+        TOKEN_PLUS        => Token::TOKEN_PLUS,
+        TOKEN_MINUS       => Token::TOKEN_MINUS,
+        TOKEN_DIVIDE      => Token::TOKEN_DIVIDE,
+        TOKEN_TIMES       => Token::TOKEN_TIMES,
+        TOKEN_MOD         => Token::TOKEN_MOD,
+        TOKEN_SEMICOLON   => Token::TOKEN_SEMICOLON,
+        TOKEN_COLON       => Token::TOKEN_COLON,
+        TOKEN_COMMA       => Token::TOKEN_COMMA,
+        TOKEN_NOT         => Token::TOKEN_NOT,
+        TOKEN_LBRACE      => Token::TOKEN_LBRACE,
+        TOKEN_RBRACE      => Token::TOKEN_RBRACE,
+        TOKEN_CARET       => Token::TOKEN_CARET,
+        TOKEN_GREATERTHAN => Token::TOKEN_GREATERTHAN,
+        TOKEN_FOR         => Token::TOKEN_FOR,
+        TOKEN_EQUALS      => Token::TOKEN_EQUALS,
+        TOKEN_LESSTHAN    => Token::TOKEN_LESSTHAN,
+        TOKEN_LEQ         => Token::TOKEN_LEQ,
+        TOKEN_GEQ         => Token::TOKEN_GEQ,
+        TOKEN_NEQ         => Token::TOKEN_NEQ,
+        TOKEN_EQUIVALENT  => Token::TOKEN_EQUIVALENT,
+        TOKEN_OR          => Token::TOKEN_OR,
+        TOKEN_AND         => Token::TOKEN_AND,
+
+        TOKEN_IDENTIFIER      => Token::TOKEN_IDENTIFIER,
+        TOKEN_INTEGER_LITERAL => Token::TOKEN_INTEGER_LITERAL,
+        TOKEN_DOUBLE_LITERAL  => Token::TOKEN_DOUBLE_LITERAL,
+        TOKEN_STRING_LITERAL  => Token::TOKEN_STRING_LITERAL,
+        TOKEN_CHAR_LITERAL    => Token::TOKEN_CHAR_LITERAL,
+    }
+}

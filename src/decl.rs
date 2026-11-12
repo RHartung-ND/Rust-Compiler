@@ -1,59 +1,36 @@
-use crate::expr::Expr;
-// use crate::expr::expr_print;
-// use crate::expr::expr_t;
-use crate::stmt::Stmt;
-use crate::data_type::Data_type;
 use crate::print::print_indent;
+use crate::data_type::type_print;
+use crate::expr::expr_print;
+use crate::stmt::stmt_print;
+use crate::ast::{Decl, ExprKind};
 
-#[allow(non_snake_case)]
-pub struct Decl {
-    pub name:  String,
-    pub Data_type:  Data_type,
-    pub value: Expr,
-    pub code:  Stmt,
-    pub next:  Option<Box<Decl>>
-}
 
-pub fn decl_create( name: String, Data_type: Data_type, value: Expr, code: Stmt, next: Option<Box<Decl>> ) -> Decl {
-    let d = Decl {
-        name:name,
-        Data_type:Data_type,
-        value:value,
-        code:code,
-        next:next
-    };
+pub fn decl_print( d: &Box<Decl>, num_spaces: i8 ){
+	print_indent(num_spaces);
 
-	return d;
-}
-
-// pub fn decl_print( d: Decl, num_spaces: i8 ){
-//     if d == 0 {
-//         return;
-//     }
-
-// 	print_indent(num_spaces);
-
-//     print!("%s: ", d.name);
+    print!("{}: ", d.name);
     
-//     type_print(d.Type);
+    type_print(&Box::new(d.decl_type.clone()).clone());
 	
-//     if (d.value) {
-//         print!(" = ");
-//         if d.value.kind == expr_t::EXPR_LIST {
-//             print!("{{");
-//             expr_print(d.value);
-//             print!("}");
-//         } else {
-//             expr_print(d.value);
-//             print!(";");
-//         }
-//     } else if (d.code) {
-//         print!(" = ");
-//         stmt_print(d.code, num_spaces);
-//     } else {
-//         print!(";");
-//     }
-//     print!("\n");
+    if d.value.is_some() {
+        print!(" = ");
+        if d.value.as_ref().unwrap().kind == ExprKind::ExprList {
+            print!("{{");
+            expr_print(&d.value.as_ref().expect("Must have Expr"));
+            print!("}};");
+        } else {
+            expr_print(&d.value.as_ref().expect("Must have Expr"));
+            print!(";");
+        }
+    } else if d.code.is_some() {
+        print!(" = ");
+        stmt_print(&d.code.as_ref().expect("Must have Stmt"), num_spaces);
+    } else {
+        print!(";");
+    }
+    print!("\n");
 
-//     decl_print(d.next, num_spaces);
-// }
+    if let Some(next) = &d.next {
+        decl_print(next, num_spaces);
+    }
+}

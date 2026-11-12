@@ -10,8 +10,8 @@ pub fn parse(path: &String, verbose: bool) -> i32 {
 
     let input = std::fs::read_to_string(path).expect("Should have been able to read the file");
 
-    match grammar::ProgramParser::new().parse(Lexer::new(&input)) {
-        Ok(()) => {
+    match grammar::ProgramParser::new().parse(&input, Lexer::new(&input)) {
+        Ok(_decls) => {
             if verbose {
                 println!("Parse successful!");
             }

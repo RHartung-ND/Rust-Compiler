@@ -1,22 +1,11 @@
-use crate::data_type::Data_type;
+use crate::data_type::type_print;
+use crate::ast::ParamList;
 
-#[warn(non_camel_case_types)]
-pub struct Param_list {
-	name: String,
-	Data_type: Option<Box<Data_type>>,
-	next: Option<Box<Param_list>>
+pub fn param_list_print(a: &Box<ParamList>) {
+    print!("{}: ", a.name);
+    type_print(&Box::new(a.param_type.clone()).clone());
+    if a.next.is_some() {
+        print!(", ");
+        param_list_print(&a.next.as_ref().expect("Must have ParamList"));
+    }
 }
-
-
-// void param_list_print( struct param_list *a ){
-//     if(!a){
-//         return;
-//     }
-
-// 	printf("%s: ", a->name);
-// 	type_print(a->type);
-// 	if (a->next){
-// 		printf(", ");
-// 		param_list_print(a->next);
-// 	}
-// }

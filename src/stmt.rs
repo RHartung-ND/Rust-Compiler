@@ -1,151 +1,107 @@
-use crate::{decl::Decl, expr::Expr};
-#[allow(non_camel_case_types)]
-#[allow(non_snake_case)]
-pub enum stmt_t {
-	STMT_DECL,
-	STMT_EXPR,
-	STMT_IF_ELSE,
-	STMT_FOR,
-	STMT_PRINT,
-	STMT_RETURN,
-	STMT_BLOCK
+use crate::ast::{Stmt, StmtKind};
+use crate::print::print_indent;
+use crate::expr::expr_print;
+use crate::decl::decl_print;
+
+/// Prints a statement and everything linked after it via `next`.
+pub fn stmt_print(s: &Stmt, indent: i8) {
+    let mut cur = Some(s);
+    while let Some(stmt) = cur {
+        stmt_print_one(stmt, indent, false);
+        cur = stmt.next.as_deref();
+    }
 }
 
-pub struct Stmt {
-	pub kind:      stmt_t,
-	pub decl:      Option<Box<Decl>>,
-	pub init_expr: Option<Box<Expr>>,
-	pub expr:      Option<Box<Expr>>,
-	pub next_expr: Option<Box<Expr>>,
-	pub body:      Option<Box<Stmt>>,
-	pub else_body: Option<Box<Stmt>>,
-	pub next:      Option<Box<Stmt>>
+/// Prints a single statement (ignores `next`).
+fn stmt_print_one(s: &Stmt, indent: i8, is_else_if: bool) {
+    match s.kind {
+        StmtKind::StmtDecl => {
+            decl_print(s.decl.as_ref().expect("Must have Decl"), indent);
+        }
+        StmtKind::StmtExpr => {
+            print_indent(indent);
+            expr_print(s.condition.as_ref().expect("Must have Expr"));
+            print!(";\n");
+        }
+        StmtKind::StmtIfElse => {
+            if !is_else_if {
+                print_indent(indent);
+            }
+            print!("if (");
+            expr_print(s.condition.as_ref().expect("Must have Expr"));
+            print!(") ");
+            print_as_block(s.body.as_ref(), indent);
+
+            if let Some(else_body) = s.else_body.as_ref() {
+                print!(" else ");
+                if else_body.kind == StmtKind::StmtIfElse {
+                    stmt_print_one(else_body, indent, true);
+                } else {
+                    print_as_block(Some(else_body), indent);
+                }
+            }
+            if !is_else_if {
+                println!();
+            }
+        }
+        StmtKind::StmtFor => {
+            print_indent(indent);
+            print!("for (");
+            if s.init.is_some() {
+                expr_print(s.init.as_ref().expect("Must have Expr"));
+            }
+            print!(";");
+            if s.condition.is_some() {
+                print!(" ");
+                expr_print(s.condition.as_ref().expect("Must have Expr"));
+            }
+            print!(";");
+            if s.update.is_some() {
+                print!(" ");
+                expr_print(s.update.as_ref().expect("Must have Expr"));
+            }
+            print!(") ");
+            print_as_block(s.body.as_ref(), indent);
+            println!();
+        }
+        StmtKind::StmtPrint | StmtKind::StmtReturn => {
+            print_indent(indent);
+            print!("{}", if s.kind == StmtKind::StmtPrint { "print" } else { "return" });
+            if let Some(e) = s.condition.as_ref() {
+                print!(" ");
+                expr_print(e);
+            }
+            println!(";");
+        }
+        StmtKind::StmtBlock => {
+            // Collapse a block whose only content is another block.
+            if let Some(inner) = s.body.as_deref() {
+                if inner.kind == StmtKind::StmtBlock {
+                    stmt_print_one(inner, indent, false);
+                    return;
+                }
+            }
+            println!("{{");
+            if let Some(body) = s.body.as_deref() {
+                stmt_print(body, indent + 1);
+            }
+            print_indent(indent);
+            print!("}}");
+        }
+    }
 }
 
-pub fn stmt_create( kind: stmt_t, decl: Option<Box<Decl>>, init_expr: Option<Box<Expr>>, expr: Option<Box<Expr>>, next_expr: Option<Box<Expr>>, body: Option<Box<Stmt>>, else_body: Option<Box<Stmt>>, next:Option<Box<Stmt>> ) -> Stmt{
-    let s = Stmt{
-        kind: kind,
-        decl: decl,
-        init_expr: init_expr,
-        expr: expr,
-        next_expr: next_expr,
-        body: body,
-        else_body: else_body,
-        next: next,
-    };
-
-	return s;
+/// Prints `s` wrapped in braces unless it's already a block.
+/// Replaces `stmt_wrap`, so no cloning or mutation is needed.
+fn print_as_block(s: Option<&Box<Stmt>>, indent: i8) {
+    match s {
+        Some(stmt) if stmt.kind == StmtKind::StmtBlock => stmt_print_one(stmt, indent, false),
+        Some(stmt) => {
+            println!("{{");
+            stmt_print(stmt, indent + 1);
+            print_indent(indent);
+            print!("}}");
+        }
+        None => print!("{{}}"),
+    }
 }
-
-// void stmt_print( struct stmt *s, int indent, bool skip_indent, bool skip_return ) {
-//     if (!s) return;
-
-//     if ((!s->init_expr) && (skip_indent == false)) {
-//         print_indent(indent);
-//     }
-
-//     switch (s->kind) {
-//         case STMT_DECL:
-//             decl_print(s->decl, indent);
-//             break;
-//         case STMT_EXPR:
-//             expr_print(s->expr);
-//             printf(";");
-//             if (skip_return){
-//                 break;
-//             }
-//             printf("\n");
-//             break;
-//         case STMT_IF_ELSE:
-//             printf("if (");
-//             expr_print(s->expr);
-//             printf(") ");
-
-//             if (s->body){
-//                 if (s->body->kind == STMT_BLOCK){
-//                     stmt_print(s->body, indent, true, false);
-//                 } else {
-//                     stmt_print(s->body, indent + 1, true, true);
-//                 }
-//             }
-
-//             if (s->else_body){
-//                 printf(" else ");
-//                 if (s->else_body->kind == STMT_BLOCK){
-//                     stmt_print(s->else_body, indent, true, false);
-//                 } else if (s->else_body->kind == STMT_IF_ELSE) {
-//                     stmt_print(s->else_body, indent, true, false);
-//                     break;
-//                 } else {
-//                     stmt_print(s->else_body, indent + 1, true, true);
-//                 }
-//             }
-//             printf("\n");
-//             break;
-//         case STMT_FOR:
-//             if (!skip_indent){
-//                 print_indent(indent);
-//             }
-//             printf("for (");
-//             if (s->init_expr){
-//                 expr_print(s->init_expr);
-//                 printf(";");
-//             } else {
-//                 printf(";");
-//             }
-//             if (s->expr){
-//                 expr_print(s->expr);
-//                 printf(";");
-//             } else {
-//                 printf(";");
-//             }
-//             if (s->next_expr){
-//                 expr_print(s->next_expr);
-//             }
-//             printf(")");
-
-//             if (s->body->kind == STMT_BLOCK) {
-//                 stmt_print(s->body, indent, true, false);
-//             } else {
-//                 printf(" ");
-//                 stmt_print(s->body, indent + 1, true, true);
-//             }
-//             printf("\n");
-//             break;
-//         case STMT_PRINT:
-//             printf("print");
-//             if (s->expr) printf(" ");
-//             expr_print(s->expr);
-//             printf(";");
-//             if (skip_return){
-//                 break;
-//             }
-//             printf("\n");
-//             break;
-//         case STMT_RETURN:
-//             printf("return");
-//             if (s->expr) printf(" ");
-//             expr_print(s->expr);
-//             printf(";");
-//             if (skip_return){
-//                 break;
-//             }
-//             printf("\n");
-//             break;
-//         case STMT_BLOCK:
-//             if (s->body && s->body->kind == STMT_BLOCK) {
-//                 stmt_print(s->body, indent, true, false);
-//                 break;
-//             }
-//             printf("{\n");
-//             print_indent(indent + 1);
-//             stmt_print(s->body, indent + 1, true, false);
-//             print_indent(indent);
-//             printf("}");
-//             break;
-//         default:
-//             fprintf(stderr, "print error: Invalid statement.\n");
-//             exit(1);
-//     }
-//     stmt_print(s->next, indent, false, false);
-// }

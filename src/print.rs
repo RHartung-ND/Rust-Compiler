@@ -1,27 +1,24 @@
-use crate::decl::decl_create;
 use crate::parse::parse;
+use crate::decl::decl_print;
+use lalrpop_util::lalrpop_mod;
 
+lalrpop_mod!(grammar);
 
-// use crate::decl::decl_print;
-const DEFAULT_INDENT: i8 = 4;
+pub const DEFAULT_INDENT: i8 = 4;
 
-pub fn print(contents: &String, verbose: bool) -> i32 {
-    if parse(contents, false) == 1 {
+pub fn print(path: &String) -> i32 {
+    if parse(path, false) == 1 {
         return 1;
     }
 
-    // match parse_trees {
-    //     Err(_) => {
-    //         if verbose {println!("Parse Failed!")}
-    //         return 1;
-    //     },
+    let input = std::fs::read_to_string(path).expect("Should have been able to read the file");
+    
+    let ast = grammar::ProgramParser::new().parse(&input.to_string(), crate::scan::Lexer::new(&input)).unwrap();
 
-    //     _ => {
-    //         println!("{:?}", parse_trees);
-    //     }
-    // }
+    // println!("AST: {:?}", ast);
 
-    // decl_print(ast, 0);
+    decl_print(&ast.expect("There should be an AST"), 0);
+
     return 0;
 }
 

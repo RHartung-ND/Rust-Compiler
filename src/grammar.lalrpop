@@ -1,180 +1,180 @@
-use crate::scan::{Token, LexicalError};
+use crate::ast;
+use crate::scan::{LexicalError, Token};
 
-grammar;
+grammar(input: &str);
 
-pub Program: () = {
-    DeclList => (),
+pub Program: Option<Box<ast::Decl>> = {
+    <decl:DeclList> => decl,
 };
 
 // ---------- Declarations ----------
 
-DeclList: () = {
-    Decl DeclList => (),
-    => (), // ε
+DeclList: Option<Box<ast::Decl>> = {
+    <mut d:Decl> <rest:DeclList> => {
+        d.next = rest;
+        Some(d)
+    },
+    => None,
 };
 
-Decl: () = {
-    Ident TOKEN_COLON Type TOKEN_SEMICOLON => (),
-    Ident TOKEN_COLON Type TOKEN_EQUALS TOKEN_LBRACE ExprBraced TOKEN_RBRACE TOKEN_SEMICOLON => (),
-    Ident TOKEN_COLON Type TOKEN_EQUALS Expr TOKEN_SEMICOLON => (),
-    Ident TOKEN_COLON Type TOKEN_EQUALS StmtBrace => (),
+Decl: Box<ast::Decl> = {
+    <name:Ident> TOKEN_COLON <decl_type:Type> TOKEN_SEMICOLON => Box::new(ast::decl_create(&name, *decl_type, None, None, None)),
+    <name:Ident> TOKEN_COLON <decl_type:Type> TOKEN_EQUALS TOKEN_LBRACE <init_value:ExprBraced> TOKEN_RBRACE TOKEN_SEMICOLON => Box::new(ast::decl_create(&name, *decl_type, Some(init_value), None, None)),
+    <name:Ident> TOKEN_COLON <decl_type:Type> TOKEN_EQUALS <init_value:Expr> TOKEN_SEMICOLON => Box::new(ast::decl_create(&name, *decl_type, Some(init_value), None, None)),
+    <name:Ident> TOKEN_COLON <decl_type:Type> TOKEN_EQUALS <init_code:StmtBrace> => Box::new(ast::decl_create(&name, *decl_type, None, Some(init_code), None)),
 };
 
-Literals: () = {
-    TOKEN_INTEGER_LITERAL => (),
-    TOKEN_DOUBLE_LITERAL => (),
-    TOKEN_STRING_LITERAL => (),
-    TOKEN_CHAR_LITERAL => (),
-    TOKEN_FALSE => (),
-    TOKEN_TRUE => (),
+Literals: Box<ast::Expr> = {
+    <start:@L> TOKEN_INTEGER_LITERAL <end:@R> => Box::new(ast::expr_create_integer_literal(&input[start..end])),
+    <start:@L> TOKEN_DOUBLE_LITERAL <end:@R> => Box::new(ast::expr_create_double_literal(input[start..end].parse().expect("lexer produced an invalid double literal"))),
+    <start:@L> TOKEN_STRING_LITERAL <end:@R> => Box::new(ast::expr_create_string_literal(&input[start..end])),
+    <start:@L> TOKEN_CHAR_LITERAL <end:@R> => Box::new(ast::expr_create_char_literal(&input[start..end])),
+    TOKEN_FALSE => Box::new(ast::expr_create_boolean_literal(false)),
+    TOKEN_TRUE => Box::new(ast::expr_create_boolean_literal(true)),
 };
 
-Type: () = {
-    TOKEN_STRING => (),
-    TOKEN_BOOLEAN => (),
-    TOKEN_AUTO => (),
-    TOKEN_INTEGER => (),
-    TOKEN_DOUBLE => (),
-    TOKEN_CHAR => (),
-    TOKEN_VOID => (),
-    TOKEN_ARRAY TOKEN_LBRACKET Expr TOKEN_RBRACKET Type => (),
-    TOKEN_CARRAY TOKEN_LBRACKET Expr TOKEN_RBRACKET Type => (),
-    TOKEN_ARRAY TOKEN_LBRACKET TOKEN_RBRACKET Type => (),
-    TOKEN_CARRAY TOKEN_LBRACKET TOKEN_RBRACKET Type => (),
-    TOKEN_FUNCTION Type TOKEN_LPAREN ParamOpt TOKEN_RPAREN => (),
+Type: Box<ast::Type> = {
+    TOKEN_STRING => Box::new(ast::type_create(ast::TypeKind::TypeString, None, None, None)),
+    TOKEN_BOOLEAN => Box::new(ast::type_create(ast::TypeKind::TypeBoolean, None, None, None)),
+    TOKEN_AUTO => Box::new(ast::type_create(ast::TypeKind::TypeAuto, None, None, None)),
+    TOKEN_INTEGER => Box::new(ast::type_create(ast::TypeKind::TypeInteger, None, None, None)),
+    TOKEN_DOUBLE => Box::new(ast::type_create(ast::TypeKind::TypeDouble, None, None, None)),
+    TOKEN_CHAR => Box::new(ast::type_create(ast::TypeKind::TypeChar, None, None, None)),
+    TOKEN_VOID => Box::new(ast::type_create(ast::TypeKind::TypeVoid, None, None, None)),
+    TOKEN_ARRAY TOKEN_LBRACKET <size:Expr> TOKEN_RBRACKET <kind:Type> => Box::new(ast::type_create(ast::TypeKind::TypeArray, Some(kind), None, Some(size))),
+    TOKEN_CARRAY TOKEN_LBRACKET <size:Expr> TOKEN_RBRACKET <kind:Type> => Box::new(ast::type_create(ast::TypeKind::TypeCArray, Some(kind), None, Some(size))),
+    TOKEN_ARRAY TOKEN_LBRACKET TOKEN_RBRACKET <kind:Type> => Box::new(ast::type_create(ast::TypeKind::TypeArray, Some(kind), None, None)),
+    TOKEN_CARRAY TOKEN_LBRACKET TOKEN_RBRACKET <kind:Type> => Box::new(ast::type_create(ast::TypeKind::TypeCArray, Some(kind), None, None)),
+    TOKEN_FUNCTION <kind:Type> TOKEN_LPAREN <params:ParamOpt> TOKEN_RPAREN => Box::new(ast::type_create(ast::TypeKind::TypeFunction, Some(kind), params, None)),
 };
 
-ParamOpt: () = {
-    ParamList => (),
-    => (), // ε
+ParamOpt: Option<Box<ast::ParamList>> = {
+    <params:ParamList?> => params,
 };
 
-ParamList: () = {
-    Ident TOKEN_COLON Type TOKEN_COMMA ParamList => (),
-    Ident TOKEN_COLON Type => (),
+ParamList: Box<ast::ParamList> = {
+    <name:Ident> TOKEN_COLON <param_type:Type> TOKEN_COMMA <next:ParamList> => Box::new(ast::param_list_create(&name, *param_type, Some(next))),
+    <name:Ident> TOKEN_COLON <param_type:Type> => Box::new(ast::param_list_create(&name, *param_type, None)),
 };
 
 // ---------- Expressions ----------
 
-Ident: () = {
-    TOKEN_IDENTIFIER => (),
+Ident: String = {
+    <start:@L> TOKEN_IDENTIFIER <end:@R> => input[start..end].to_string(),
 };
 
-Expr: () = {
-    ExprOr => (),
-    ExprOr TOKEN_EQUALS Expr => (),
+Expr: Box<ast::Expr> = {
+    <pass:ExprOr> => pass,
+    <left:ExprOr> TOKEN_EQUALS <right:Expr> => Box::new(ast::expr_create(ast::ExprKind::ExprAssign, left, right)),
 };
 
-ExprOr: () = {
-    ExprAnd => (),
-    ExprOr TOKEN_OR ExprAnd => (),
+ExprOr: Box<ast::Expr> = {
+    <pass:ExprAnd> => pass,
+    <left:ExprOr> TOKEN_OR <right:ExprAnd> => Box::new(ast::expr_create(ast::ExprKind::ExprOr, left, right)),
 };
 
-ExprAnd: () = {
-    ExprComparison => (),
-    ExprAnd TOKEN_AND ExprComparison => (),
+ExprAnd: Box<ast::Expr> = {
+    <pass:ExprComparison> => pass,
+    <left:ExprAnd> TOKEN_AND <right:ExprComparison> => Box::new(ast::expr_create(ast::ExprKind::ExprAnd, left, right)),
 };
 
-ExprComparison: () = {
-    ExprPm => (),
-    ExprComparison TOKEN_EQUIVALENT ExprPm => (),
-    ExprComparison TOKEN_NEQ ExprPm => (),
-    ExprComparison TOKEN_GREATERTHAN ExprPm => (),
-    ExprComparison TOKEN_GEQ ExprPm => (),
-    ExprComparison TOKEN_LESSTHAN ExprPm => (),
-    ExprComparison TOKEN_LEQ ExprPm => (),
+ExprComparison: Box<ast::Expr> = {
+    <pass:ExprPm> => pass,
+    <left:ExprComparison> TOKEN_EQUIVALENT <right:ExprPm> => Box::new(ast::expr_create(ast::ExprKind::ExprEquiv, left, right)),
+    <left:ExprComparison> TOKEN_NEQ <right:ExprPm> => Box::new(ast::expr_create(ast::ExprKind::ExprNeq, left, right)),
+    <left:ExprComparison> TOKEN_GREATERTHAN <right:ExprPm> => Box::new(ast::expr_create(ast::ExprKind::ExprGt, left, right)),
+    <left:ExprComparison> TOKEN_GEQ <right:ExprPm> => Box::new(ast::expr_create(ast::ExprKind::ExprGeq, left, right)),
+    <left:ExprComparison> TOKEN_LESSTHAN <right:ExprPm> => Box::new(ast::expr_create(ast::ExprKind::ExprLt, left, right)),
+    <left:ExprComparison> TOKEN_LEQ <right:ExprPm> => Box::new(ast::expr_create(ast::ExprKind::ExprLeq, left, right)),
 };
 
-ExprPm: () = {
-    ExprTd => (),
-    ExprPm TOKEN_PLUS ExprTd => (),
-    ExprPm TOKEN_MINUS ExprTd => (),
+ExprPm: Box<ast::Expr> = {
+    <pass:ExprTd> => pass,
+    <left:ExprPm> TOKEN_PLUS <right:ExprTd> => Box::new(ast::expr_create(ast::ExprKind::ExprPlus, left, right)),
+    <left:ExprPm> TOKEN_MINUS <right:ExprTd> => Box::new(ast::expr_create(ast::ExprKind::ExprMinus, left, right)),
 };
 
-ExprTd: () = {
-    ExprExp => (),
-    ExprTd TOKEN_TIMES ExprExp => (),
-    ExprTd TOKEN_DIVIDE ExprExp => (),
-    ExprTd TOKEN_MOD ExprExp => (),
+ExprTd: Box<ast::Expr> = {
+    <pass:ExprExp> => pass,
+    <left:ExprTd> TOKEN_TIMES <right:ExprExp> => Box::new(ast::expr_create(ast::ExprKind::ExprTimes, left, right)),
+    <left:ExprTd> TOKEN_DIVIDE <right:ExprExp> => Box::new(ast::expr_create(ast::ExprKind::ExprDivide, left, right)),
+    <left:ExprTd> TOKEN_MOD <right:ExprExp> => Box::new(ast::expr_create(ast::ExprKind::ExprMod, left, right)),
 };
 
-ExprExp: () = {
-    ExprNegate => (),
-    ExprNegate TOKEN_CARET ExprExp => (),
+ExprExp: Box<ast::Expr> = {
+    <pass:ExprNegate> => pass,
+    <left:ExprNegate> TOKEN_CARET <right:ExprExp> => Box::new(ast::expr_create(ast::ExprKind::ExprExp, left, right)),
 };
 
-ExprNegate: () = {
-    ExprEnd => (),
-    TOKEN_UNARY ExprEnd => (),
-    TOKEN_NOT ExprEnd => (),
-    TOKEN_MINUS ExprEnd => (),
+ExprNegate: Box<ast::Expr> = {
+    <pass:ExprEnd> => pass,
+    TOKEN_UNARY <left:ExprEnd> => Box::new(ast::expr_create(ast::ExprKind::ExprUnary, left, None)),
+    TOKEN_NOT <left:ExprEnd> => Box::new(ast::expr_create(ast::ExprKind::ExprNot, left, None)),
+    TOKEN_MINUS <left:ExprEnd> => Box::new(ast::expr_create(ast::ExprKind::ExprNegate, left, None)),
 };
 
-ExprEnd: () = {
-    ExprEnd TOKEN_INCREMENT => (),
-    ExprEnd TOKEN_DECREMENT => (),
-    Literals => (),
-    Ident => (),
-    Ident TOKEN_LPAREN ExprListOpt TOKEN_RPAREN => (),
-    TOKEN_LPAREN Expr TOKEN_RPAREN => (),
-    ExprEnd TOKEN_LBRACKET Expr TOKEN_RBRACKET => (),
+ExprEnd: Box<ast::Expr> = {
+    <left:ExprEnd> TOKEN_INCREMENT => Box::new(ast::expr_create(ast::ExprKind::ExprInc, left, None)),
+    <left:ExprEnd> TOKEN_DECREMENT => Box::new(ast::expr_create(ast::ExprKind::ExprDec, left, None)),
+    <pass:Literals> => pass,
+    <name:Ident> => Box::new(ast::expr_create_name(&name)),
+    <name:Ident> TOKEN_LPAREN <right:ExprListOpt> TOKEN_RPAREN => Box::new(ast::expr_create(ast::ExprKind::ExprFunc, Box::new(ast::expr_create_name(&name)), right)),
+    TOKEN_LPAREN <pass:Expr> TOKEN_RPAREN => pass,
+    <left:ExprEnd> TOKEN_LBRACKET <right:Expr> TOKEN_RBRACKET => Box::new(ast::expr_create(ast::ExprKind::ExprIdx, left, right)),
 };
 
-ExprList: () = {
-    Expr TOKEN_COMMA ExprList => (),
-    Expr => (),
+ExprList: Box<ast::Expr> = {
+    <left:Expr> TOKEN_COMMA <right:ExprList> => Box::new(ast::expr_create(ast::ExprKind::ExprList, left, right)),
+    <left:Expr> => Box::new(ast::expr_create(ast::ExprKind::ExprList, left, None)),
 };
 
-ExprListOpt: () = {
-    ExprList => (),
-    => (), // ε
-};
+ExprListOpt: Option<Box<ast::Expr>> = ExprList?;
 
-ExprOpt: () = {
-    Expr => (),
-    => (), // ε
-};
+ExprOpt: Option<Box<ast::Expr>> = Expr?;
 
-ExprBraced: () = {
-    TOKEN_LBRACE ExprBraced TOKEN_RBRACE TOKEN_COMMA ExprBraced => (),
-    TOKEN_LBRACE ExprBraced TOKEN_RBRACE => (),
-    ExprList => (),
+ExprBraced: Box<ast::Expr> = {
+    TOKEN_LBRACE <left:ExprBraced> TOKEN_RBRACE TOKEN_COMMA <right:ExprBraced> => Box::new(ast::expr_create(ast::ExprKind::ExprBrace, left, right)),
+    TOKEN_LBRACE <left:ExprBraced> TOKEN_RBRACE => Box::new(ast::expr_create(ast::ExprKind::ExprBrace, left, None)),
+    <pass:ExprList> => pass,
 };
 
 // ---------- Statements ----------
 
-Stmt: () = {
-    UnmatchedStmt => (),
-    MatchedStmt => (),
+Stmt: Box<ast::Stmt> = {
+    <pass:UnmatchedStmt> => pass,
+    <pass:MatchedStmt> => pass,
 };
 
-StmtBrace: () = {
-    TOKEN_LBRACE StmtCont TOKEN_RBRACE => (),
+StmtBrace: Box<ast::Stmt> = {
+    TOKEN_LBRACE <body:StmtCont> TOKEN_RBRACE => Box::new(ast::stmt_create(ast::StmtKind::StmtBlock, None, None, None, None, body, None, None)),
 };
 
-StmtCont: () = {
-    Stmt StmtCont => (),
-    => (), // ε
+StmtCont: Option<Box<ast::Stmt>> = {
+    <mut s:Stmt> <rest:StmtCont> => {
+        s.next = rest;
+        Some(s)
+    },
+    => None,
 };
 
-UnmatchedStmt: () = {
-    TOKEN_IF TOKEN_LPAREN Expr TOKEN_RPAREN Stmt => (),
-    TOKEN_IF TOKEN_LPAREN Expr TOKEN_RPAREN MatchedStmt TOKEN_ELSE UnmatchedStmt => (),
-    TOKEN_FOR TOKEN_LPAREN ExprOpt TOKEN_SEMICOLON ExprOpt TOKEN_SEMICOLON ExprOpt TOKEN_RPAREN UnmatchedStmt => (),
+UnmatchedStmt: Box<ast::Stmt> = {
+    TOKEN_IF TOKEN_LPAREN <condition:Expr> TOKEN_RPAREN <body:Stmt> => Box::new(ast::stmt_create(ast::StmtKind::StmtIfElse, None, None, Some(condition), None, Some(body), None, None)),
+    TOKEN_IF TOKEN_LPAREN <condition:Expr> TOKEN_RPAREN <body:MatchedStmt> TOKEN_ELSE <else_body:UnmatchedStmt> => Box::new(ast::stmt_create(ast::StmtKind::StmtIfElse, None, None, Some(condition), None, Some(body), Some(else_body), None)),
+    TOKEN_FOR TOKEN_LPAREN <init:ExprOpt> TOKEN_SEMICOLON <condition:ExprOpt> TOKEN_SEMICOLON <update:ExprOpt> TOKEN_RPAREN <body:UnmatchedStmt> => Box::new(ast::stmt_create(ast::StmtKind::StmtFor, None, init, condition, update, Some(body), None, None)),
 };
 
-MatchedStmt: () = {
-    TOKEN_FOR TOKEN_LPAREN ExprOpt TOKEN_SEMICOLON ExprOpt TOKEN_SEMICOLON ExprOpt TOKEN_RPAREN MatchedStmt => (),
-    TOKEN_IF TOKEN_LPAREN Expr TOKEN_RPAREN MatchedStmt TOKEN_ELSE MatchedStmt => (),
-    StmtOther => (),
+MatchedStmt: Box<ast::Stmt> = {
+    TOKEN_FOR TOKEN_LPAREN <init:ExprOpt> TOKEN_SEMICOLON <condition:ExprOpt> TOKEN_SEMICOLON <update:ExprOpt> TOKEN_RPAREN <body:MatchedStmt> => Box::new(ast::stmt_create(ast::StmtKind::StmtFor, None, init, condition, update, Some(body), None, None)),
+    TOKEN_IF TOKEN_LPAREN <condition:Expr> TOKEN_RPAREN <body:MatchedStmt> TOKEN_ELSE <else_body:MatchedStmt> => Box::new(ast::stmt_create(ast::StmtKind::StmtIfElse, None, None, Some(condition), None, Some(body), Some(else_body), None)),
+    <pass:StmtOther> => pass,
 };
 
-StmtOther: () = {
-    Expr TOKEN_SEMICOLON => (),
-    TOKEN_RETURN ExprOpt TOKEN_SEMICOLON => (),
-    TOKEN_PRINT ExprListOpt TOKEN_SEMICOLON => (),
-    Decl => (),
-    StmtBrace => (),
+StmtOther: Box<ast::Stmt> = {
+    <condition:Expr> TOKEN_SEMICOLON => Box::new(ast::stmt_create(ast::StmtKind::StmtExpr, None, None, Some(condition), None, None, None, None)),
+    TOKEN_RETURN <condition:ExprOpt> TOKEN_SEMICOLON => Box::new(ast::stmt_create(ast::StmtKind::StmtReturn, None, None, condition, None, None, None, None)),
+    TOKEN_PRINT <condition:ExprListOpt> TOKEN_SEMICOLON => Box::new(ast::stmt_create(ast::StmtKind::StmtPrint, None, None, condition, None, None, None, None)),
+    <decl:Decl> => Box::new(ast::stmt_create(ast::StmtKind::StmtDecl, Some(decl), None, None, None, None, None, None)),
+    <pass:StmtBrace> => pass,
 };
 
 

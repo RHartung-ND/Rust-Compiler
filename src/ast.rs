@@ -1,41 +1,39 @@
-use std::fmt;
-
 // ============================================================================
 // Expression Types
 // ============================================================================
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
-    IntegerLiteral(i64),
-    DoubleLiteral(f64),
-    StringLiteral(String),
-    CharLiteral(char),
-    BooleanLiteral(bool),
-    Name(String),
-    Assign,
-    Or,
-    And,
-    Equiv,
-    Neq,
-    Gt,
-    Geq,
-    Lt,
-    Leq,
-    Plus,
-    Minus,
-    Times,
-    Divide,
-    Mod,
-    Exp,
-    Unary,
-    Not,
-    Negate,
-    Inc,
-    Dec,
-    Func,
-    Index,
-    List,
-    Brace,
+	ExprPlus,
+	ExprMinus,
+	ExprNegate,
+	ExprTimes,
+	ExprDivide,
+	ExprMod,
+	ExprExp,
+	ExprName(String),
+	ExprIntLiteral(String),
+	ExprBoolLiteral(bool),
+	ExprCharLiteral(char),
+	ExprStringLiteral(String),
+	ExprDoubleLiteral(f64),
+	ExprFunc,
+	ExprInc,
+	ExprDec,
+	ExprIdx,
+	ExprAssign,
+	ExprOr,
+	ExprAnd,
+	ExprEquiv,
+	ExprNeq,
+	ExprGt,
+	ExprGeq,
+	ExprLt,
+	ExprLeq,
+	ExprUnary,
+	ExprNot,
+	ExprBrace,
+	ExprList
 }
 
 #[derive(Debug, Clone)]
@@ -45,38 +43,22 @@ pub struct Expr {
     pub right: Option<Box<Expr>>,
 }
 
-impl Expr {
-    pub fn empty() -> Self {
-        Expr {
-            kind: ExprKind::IntegerLiteral(0),
-            left: None,
-            right: None,
-        }
-    }
-}
-
-impl Default for Expr {
-    fn default() -> Self {
-        Self::empty()
-    }
-}
-
 // ============================================================================
 // Type System
 // ============================================================================
 
 #[derive(Debug, Clone)]
 pub enum TypeKind {
-    String,
-    Boolean,
-    Auto,
-    Integer,
-    Double,
-    Char,
-    Void,
-    Array,
-    CArray,
-    Function,
+	TypeString,
+	TypeBoolean,
+	TypeAuto,
+	TypeInteger,
+	TypeDouble,
+	TypeChar,
+	TypeVoid,
+	TypeArray,
+	TypeCArray,
+	TypeFunction
 }
 
 #[derive(Debug, Clone)]
@@ -102,122 +84,58 @@ pub struct ParamList {
 pub struct Decl {
     pub name: String,
     pub decl_type: Type,
-    pub init_value: Option<Box<Expr>>,
-    pub init_code: Option<Box<Stmt>>,
-    pub next: Box<Decl>,
+    pub value: Option<Box<Expr>>,
+    pub code: Option<Box<Stmt>>,
+    pub next: Option<Box<Decl>>,
 }
 
-impl Default for Decl {
-    fn default() -> Self {
-        Decl {
-            name: String::new(),
-            decl_type: Type {
-                kind: TypeKind::Void,
-                subtype: None,
-                params: None,
-                size: None,
-            },
-            init_value: None,
-            init_code: None,
-            next: Box::new(Decl::default()),
-        }
-    }
-}
 
 // ============================================================================
 // Statement Types
 // ============================================================================
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum StmtKind {
-    Block,
-    IfElse,
-    For,
-    Expr,
-    Return,
-    Print,
-    Decl,
+	StmtDecl,
+	StmtExpr,
+	StmtIfElse,
+	StmtFor,
+	StmtPrint,
+	StmtReturn,
+	StmtBlock
 }
 
 #[derive(Debug, Clone)]
 pub struct Stmt {
     pub kind: StmtKind,
-    pub decl: Option<Decl>,
-    pub init: Option<Box<Expr>>,
-    pub condition: Option<Box<Expr>>,
-    pub update: Option<Box<Expr>>,
-    pub body: Box<Stmt>,
+    pub decl: Option<Box<Decl>>,
+    pub init: Option<Box<Expr>>,      // init_expr
+    pub condition: Option<Box<Expr>>, // expr
+    pub update: Option<Box<Expr>>,    // next_expr
+    pub body: Option<Box<Stmt>>,
     pub else_body: Option<Box<Stmt>>,
-    pub next: Box<Stmt>,
-}
-
-impl Stmt {
-    pub fn empty() -> Self {
-        Stmt {
-            kind: StmtKind::Block,
-            decl: None,
-            init: None,
-            condition: None,
-            update: None,
-            body: Box::new(Stmt::empty_inner()),
-            else_body: None,
-            next: Box::new(Stmt::empty_inner()),
-        }
-    }
-
-    fn empty_inner() -> Self {
-        Stmt {
-            kind: StmtKind::Block,
-            decl: None,
-            init: None,
-            condition: None,
-            update: None,
-            body: Box::new(Stmt {
-                kind: StmtKind::Block,
-                decl: None,
-                init: None,
-                condition: None,
-                update: None,
-                body: Box::new(Stmt::empty_inner()),
-                else_body: None,
-                next: Box::new(Stmt::empty_inner()),
-            }),
-            else_body: None,
-            next: Box::new(Stmt::empty_inner()),
-        }
-    }
-}
-
-impl Default for Stmt {
-    fn default() -> Self {
-        Stmt {
-            kind: StmtKind::Block,
-            decl: None,
-            init: None,
-            condition: None,
-            update: None,
-            body: Box::new(Stmt::empty()),
-            else_body: None,
-            next: Box::new(Stmt::empty()),
-        }
-    }
+    pub next: Option<Box<Stmt>>,
 }
 
 // ============================================================================
 // Helper Functions
 // ============================================================================
 
-pub fn expr_create(kind: ExprKind, left: Box<Expr>, right: Box<Expr>) -> Expr {
+pub fn expr_create(
+    kind: ExprKind,
+    left: Box<Expr>,
+    right: impl Into<Option<Box<Expr>>>,
+) -> Expr {
     Expr {
         kind,
         left: Some(left),
-        right: Some(right),
+        right: right.into(),
     }
 }
 
 pub fn expr_create_integer_literal(value: &str) -> Expr {
     Expr {
-        kind: ExprKind::IntegerLiteral(value.parse().unwrap_or(0)),
+        kind: ExprKind::ExprIntLiteral(value.parse().unwrap()),
         left: None,
         right: None,
     }
@@ -225,7 +143,7 @@ pub fn expr_create_integer_literal(value: &str) -> Expr {
 
 pub fn expr_create_double_literal(value: f64) -> Expr {
     Expr {
-        kind: ExprKind::DoubleLiteral(value),
+        kind: ExprKind::ExprDoubleLiteral(value),
         left: None,
         right: None,
     }
@@ -233,15 +151,30 @@ pub fn expr_create_double_literal(value: f64) -> Expr {
 
 pub fn expr_create_string_literal(value: &str) -> Expr {
     Expr {
-        kind: ExprKind::StringLiteral(value.to_string()),
+        kind: ExprKind::ExprStringLiteral(value.to_string()),
         left: None,
         right: None,
     }
 }
 
-pub fn expr_create_char_literal(value: &str) -> Expr {
+pub fn expr_create_char_literal(text: &str) -> Expr {
+    let b = text.as_bytes();
+    let c: u8 = if b[1] == b'\\' {
+        if b[2] == b'0' {
+            if b.get(3) == Some(&b'x') {
+                u8::from_str_radix(&text[4..6], 16).unwrap_or(0)
+            } else {
+                0
+            }
+        } else {
+            b[2]
+        }
+    } else {
+        b[1]
+    };
+
     Expr {
-        kind: ExprKind::CharLiteral(value.chars().next().unwrap_or('\0')),
+        kind: ExprKind::ExprCharLiteral(c as char),
         left: None,
         right: None,
     }
@@ -249,7 +182,7 @@ pub fn expr_create_char_literal(value: &str) -> Expr {
 
 pub fn expr_create_boolean_literal(value: bool) -> Expr {
     Expr {
-        kind: ExprKind::BooleanLiteral(value),
+        kind: ExprKind::ExprBoolLiteral(value),
         left: None,
         right: None,
     }
@@ -257,7 +190,7 @@ pub fn expr_create_boolean_literal(value: bool) -> Expr {
 
 pub fn expr_create_name(name: &str) -> Expr {
     Expr {
-        kind: ExprKind::Name(name.to_string()),
+        kind: ExprKind::ExprName(name.to_string()),
         left: None,
         right: None,
     }
@@ -292,26 +225,26 @@ pub fn param_list_create(
 pub fn decl_create(
     name: &str,
     decl_type: Type,
-    init_value: Option<Box<Expr>>,
-    init_code: Option<Box<Stmt>>,
+    value: Option<Box<Expr>>,
+    code: Option<Box<Stmt>>,
     _reserved: Option<()>,
 ) -> Decl {
     Decl {
         name: name.to_string(),
         decl_type,
-        init_value,
-        init_code,
-        next: Box::new(Decl::default()),
+        value,
+        code,
+        next: None,
     }
 }
 
 pub fn stmt_create(
     kind: StmtKind,
-    decl: Option<Decl>,
+    decl: Option<Box<Decl>>,
     init: Option<Box<Expr>>,
     condition: Option<Box<Expr>>,
     update: Option<Box<Expr>>,
-    body: Box<Stmt>,
+    body: Option<Box<Stmt>>,
     else_body: Option<Box<Stmt>>,
     _reserved: Option<()>,
 ) -> Stmt {
@@ -323,6 +256,6 @@ pub fn stmt_create(
         update,
         body,
         else_body,
-        next: Box::new(Stmt::default()),
+        next: None,
     }
 }

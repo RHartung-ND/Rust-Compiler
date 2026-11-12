@@ -41,7 +41,7 @@ fn main() -> ExitCode{
             }
         },
         "--print" => {
-            if print::print(&file_path, true) != 0 {
+            if print::print(&file_path) != 0 {
                 return ExitCode::from(1);
             }
         },
